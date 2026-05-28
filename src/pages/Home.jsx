@@ -44,7 +44,129 @@ const Home = () => {
   const workRef  = useRef(null)
   const servRef  = useRef(null)
   const ctaRef   = useRef(null)
+  
+  // Interactive orb elements refs (antigravity style cursor attraction)
+  const heroSectionRef = useRef(null)
+  const orbPurpleRef = useRef(null)
+  const orbGoldRef = useRef(null)
+
   const featuredProjects = getFeaturedProjects()
+
+  // Interactive background orbs (antigravity style cursor attraction + self-floating)
+  useEffect(() => {
+    const hero = heroSectionRef.current
+    const orbPurple = orbPurpleRef.current
+    const orbGold = orbGoldRef.current
+    if (!hero || !orbPurple || !orbGold) return
+
+    const mouse = {
+      x: 0,
+      y: 0,
+      targetX: 0,
+      targetY: 0,
+      active: false,
+      timeout: null
+    }
+
+    const logoContainers = hero.querySelectorAll('.floating-logo-container')
+    const factors = [0.16, 0.08, 0.12, 0.06]
+
+    const onMouseMove = (e) => {
+      const rect = hero.getBoundingClientRect()
+      mouse.targetX = e.clientX - rect.left - rect.width / 2
+      mouse.targetY = e.clientY - rect.top - rect.height / 2
+
+      // Reset the inactivity timeout: return to normal space after 1 second of no movement
+      if (mouse.timeout) clearTimeout(mouse.timeout)
+      mouse.timeout = setTimeout(() => {
+        mouse.targetX = 0
+        mouse.targetY = 0
+      }, 1000)
+    }
+
+    const onMouseEnter = () => {
+      mouse.active = true
+    }
+
+    const onMouseLeave = () => {
+      mouse.active = false
+      if (mouse.timeout) clearTimeout(mouse.timeout)
+      mouse.targetX = 0
+      mouse.targetY = 0
+    }
+
+    hero.addEventListener('mousemove', onMouseMove)
+    hero.addEventListener('mouseenter', onMouseEnter)
+    hero.addEventListener('mouseleave', onMouseLeave)
+
+    let currentX = 0
+    let currentY = 0
+    let frameId;
+    let time = 0;
+
+    const update = () => {
+      time += 0.005; // speed of floating
+
+      // Continuous float offsets (sine wave self-floating)
+      const floatPurpleX = Math.sin(time) * 45
+      const floatPurpleY = Math.cos(time * 1.3) * 40
+      
+      const floatGoldX = Math.cos(time * 0.9) * 35
+      const floatGoldY = Math.sin(time * 1.1) * 35
+
+      // Mouse attraction lerp (smooth spring/inertia lag)
+      currentX += (mouse.targetX - currentX) * 0.04
+      currentY += (mouse.targetY - currentY) * 0.04
+
+      // Only animate if the hero is visible on screen
+      const scrollY = window.scrollY
+      const heroHeight = rect?.height || hero.offsetHeight
+      
+      if (scrollY < heroHeight + 100) {
+        // Purple orb: direct attraction
+        gsap.set(orbPurple, {
+          x: floatPurpleX + currentX * 0.28,
+          y: floatPurpleY + currentY * 0.28
+        })
+
+        // Gold orb: opposite direction for 3D depth parallax
+        gsap.set(orbGold, {
+          x: floatGoldX - currentX * 0.15,
+          y: floatGoldY - currentY * 0.15
+        })
+
+        // Floating tool logos: parallax cursor attraction
+        logoContainers.forEach((container) => {
+          const idx = parseInt(container.getAttribute('data-index') || '0', 10)
+          const factor = factors[idx] || 0.1
+          gsap.set(container, {
+            x: currentX * factor,
+            y: currentY * factor
+          })
+        })
+      }
+
+      frameId = requestAnimationFrame(update)
+    }
+
+    let rect = hero.getBoundingClientRect()
+    
+    const onResize = () => {
+      if (hero) rect = hero.getBoundingClientRect()
+    }
+    window.addEventListener('resize', onResize)
+
+    frameId = requestAnimationFrame(update)
+
+    return () => {
+      hero.removeEventListener('mousemove', onMouseMove)
+      hero.removeEventListener('mouseenter', onMouseEnter)
+      hero.removeEventListener('mouseleave', onMouseLeave)
+      window.removeEventListener('resize', onResize)
+      if (mouse.timeout) clearTimeout(mouse.timeout)
+      cancelAnimationFrame(frameId)
+    }
+  }, [])
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -163,24 +285,31 @@ const Home = () => {
     <div ref={pageRef} className="min-h-screen" style={{ background: 'var(--bg-base)' }}>
 
       {/* ── HERO ──────────────────────────────────────────────────────── */}
-      <section className="hero-section relative min-h-screen flex items-center justify-center overflow-hidden">
+      <section ref={heroSectionRef} className="hero-section relative min-h-screen flex items-center justify-center overflow-hidden">
         <div className="hero-parallax absolute inset-0 pointer-events-none">
           <div className="absolute inset-0" style={{ background: 'var(--hero-gradient)' }} />
           <div className="absolute inset-0 opacity-[0.03]"
             style={{ backgroundImage: 'linear-gradient(rgba(139,92,246,1) 1px, transparent 1px), linear-gradient(90deg, rgba(139,92,246,1) 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
-          <div className="orb-purple w-[700px] h-[700px] top-1/4 -left-48 opacity-20" />
-          <div className="orb-gold    w-[500px] h-[500px] bottom-0  right-0  opacity-10" />
+          <div ref={orbPurpleRef} className="orb-purple w-[700px] h-[700px] top-1/4 -left-48 opacity-20" />
+          <div ref={orbGoldRef} className="orb-gold    w-[500px] h-[500px] bottom-0  right-0  opacity-10" />
         </div>
 
         {/* Floating logos */}
-        <div className="pointer-events-none absolute inset-0 hidden lg:block">
-          {floatingLogos.map((logo) => (
-            <motion.img key={logo.alt} src={logo.src} alt={logo.alt}
-              className="w-10 xl:w-14 absolute drop-shadow-2xl"
-              style={{ ...logo.style, opacity: 0.4 }}
-              animate={{ y: [0, -20, -8, 0], rotate: [0, 5, -3, 0] }}
-              transition={{ duration: logo.dur, repeat: Infinity, ease: 'easeInOut', delay: logo.delay }}
-            />
+        <div className="pointer-events-none absolute inset-0 block">
+          {floatingLogos.map((logo, index) => (
+            <div
+              key={logo.alt}
+              className="floating-logo-container absolute"
+              style={logo.style}
+              data-index={index}
+            >
+              <motion.img src={logo.src} alt={logo.alt}
+                className="w-7 sm:w-10 xl:w-14 drop-shadow-2xl"
+                style={{ opacity: 0.4 }}
+                animate={{ y: [0, -20, -8, 0], rotate: [0, 5, -3, 0] }}
+                transition={{ duration: logo.dur, repeat: Infinity, ease: 'easeInOut', delay: logo.delay }}
+              />
+            </div>
           ))}
         </div>
 

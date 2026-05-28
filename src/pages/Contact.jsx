@@ -6,6 +6,7 @@ import { designer } from '../data/portfolio'
 import { FiSend, FiPhone, FiMail } from 'react-icons/fi'
 import { FaBehance, FaInstagram, FaLinkedin } from 'react-icons/fa'
 import { scrollTA } from '../hooks/useHeroAnimation'
+import emailjs from '@emailjs/browser'
 
 gsap.registerPlugin(ScrollTrigger)
 
@@ -27,12 +28,86 @@ const Contact = () => {
     e.preventDefault()
     setSubmitting(true)
     setStatus(null)
+
+    // Load environment variables
+    const web3Key = import.meta.env.VITE_WEB3FORMS_ACCESS_KEY
+    const emailjsService = import.meta.env.VITE_EMAILJS_SERVICE_ID
+    const emailjsTemplate = import.meta.env.VITE_EMAILJS_TEMPLATE_ID
+    const emailjsKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY
+
+    // 1. Web3Forms Submission (Easiest setup)
+    if (web3Key) {
+      try {
+        const response = await fetch("https://api.web3forms.com/submit", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({
+            access_key: web3Key,
+            name: formData.name,
+            email: formData.email,
+            subject: formData.subject,
+            message: formData.message,
+          }),
+        });
+
+        const res = await response.json();
+        if (res.success) {
+          setStatus('success')
+          setFormData({ name: '', email: '', subject: '', message: '' })
+        } else {
+          setStatus('error')
+        }
+      } catch (err) {
+        console.error("Web3Forms submission failed:", err)
+        setStatus('error')
+      } finally {
+        setSubmitting(false)
+        setTimeout(() => setStatus(null), 6000)
+      }
+      return
+    }
+
+    // 2. EmailJS Submission
+    if (emailjsService && emailjsTemplate && emailjsKey) {
+      try {
+        const res = await emailjs.send(
+          emailjsService,
+          emailjsTemplate,
+          {
+            from_name: formData.name,
+            reply_to: formData.email,
+            subject: formData.subject,
+            message: formData.message,
+          },
+          emailjsKey
+        );
+        if (res.status === 200) {
+          setStatus('success')
+          setFormData({ name: '', email: '', subject: '', message: '' })
+        } else {
+          setStatus('error')
+        }
+      } catch (err) {
+        console.error("EmailJS submission failed:", err)
+        setStatus('error')
+      } finally {
+        setSubmitting(false)
+        setTimeout(() => setStatus(null), 6000)
+      }
+      return
+    }
+
+    // 3. Mock Fallback (For local dev preview)
+    console.warn("No contact form configuration found. To receive actual emails, create a .env file with your Web3Forms or EmailJS credentials.")
     setTimeout(() => {
       setStatus('success')
       setFormData({ name: '', email: '', subject: '', message: '' })
       setSubmitting(false)
       setTimeout(() => setStatus(null), 6000)
-    }, 1400)
+    }, 1200)
   }
 
   // Set initial hidden state BEFORE paint to prevent flash
