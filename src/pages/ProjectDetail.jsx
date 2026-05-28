@@ -1,53 +1,92 @@
-import { useParams, Link } from 'react-router-dom'
+import { useEffect, useRef } from 'react'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { useEffect } from 'react'
-import { getProjectById } from '../data/projects'
+import { gsap } from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { getProjectById, projects } from '../data/projects'
+import { FiArrowLeft, FiArrowRight, FiExternalLink } from 'react-icons/fi'
+
+gsap.registerPlugin(ScrollTrigger)
 
 const ProjectDetail = () => {
-  const { id } = useParams()
-  const project = getProjectById(id)
-  
+  const { id }     = useParams()
+  const navigate   = useNavigate()
+  const heroRef    = useRef(null)
+  const project    = getProjectById(id)
+  const currentIdx = projects.findIndex(p => p.id === parseInt(id))
+  const nextProject = projects[(currentIdx + 1) % projects.length]
+
+  useEffect(() => {
+    window.scrollTo(0, 0)
+    if (!project) return
+
+    // Parallax hero image
+    gsap.to('.detail-hero-img', {
+      yPercent: 20,
+      ease: 'none',
+      scrollTrigger: {
+        trigger: heroRef.current,
+        start: 'top top',
+        end: 'bottom top',
+        scrub: true,
+      },
+    })
+
+    return () => ScrollTrigger.getAll().forEach(t => t.kill())
+  }, [id, project])
+
   if (!project) {
     return (
-      <div className="min-h-screen pt-20 flex items-center justify-center">
+      <div className="min-h-screen pt-20 flex items-center justify-center" style={{ background: 'var(--bg-base)' }}>
         <div className="text-center">
-          <h1 className="text-4xl font-bold mb-4">Project Not Found</h1>
-          <Link to="/work" className="text-primary-600 hover:underline">
-            Back to Work
-          </Link>
+          <h1 className="text-4xl font-display font-bold text-white mb-4">Project Not Found</h1>
+          <Link to="/work" className="btn-primary">← Back to Work</Link>
         </div>
       </div>
     )
   }
 
-  useEffect(() => {
-    window.scrollTo(0, 0)
-  }, [id])
-
   return (
-    <div className="min-h-screen pt-20">
-      {/* Hero Image */}
-      <section className="relative h-[60vh] overflow-hidden">
-                    <motion.img
-                      src={project.image.replace('w=800&h=600', 'w=1200&h=800')}
-                      alt={project.title}
-                      className="w-full h-full object-cover"
-                      initial={{ scale: 1.2 }}
-                      animate={{ scale: 1 }}
-                      transition={{ duration: 1.2, ease: 'easeOut' }}
-                    />
-        <div className="absolute inset-0 bg-gradient-to-t from-dark-900/80 to-transparent" />
-        <div className="absolute bottom-0 left-0 right-0 p-12">
+    <div className="min-h-screen pt-20" style={{ background: 'var(--bg-base)' }}>
+
+      {/* ── Back ─────────────────────────────────────────────────────── */}
+      <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 pt-8 pb-4">
+        <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+          <Link
+            to="/work"
+            className="inline-flex items-center gap-2 text-sm transition-colors hover:text-white"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            <FiArrowLeft className="w-4 h-4" /> Back to Work
+          </Link>
+        </motion.div>
+      </div>
+
+      {/* ── Hero Image ──────────────────────────────────────────────── */}
+      <section ref={heroRef} className="relative overflow-hidden" style={{ height: '55vh', minHeight: '350px' }}>
+        <div className="absolute inset-0 overflow-hidden">
+          <img
+            src={project.image}
+            alt={project.title}
+            className="detail-hero-img w-full h-full object-cover scale-110"
+          />
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, rgba(6,11,20,0.3) 0%, rgba(6,11,20,0.85) 100%)' }} />
+        </div>
+
+        {/* Hero labels */}
+        <div className="absolute bottom-8 left-0 right-0">
           <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
+              transition={{ duration: 0.8 }}
             >
-              <span className="inline-block px-4 py-2 bg-primary-600 text-white rounded-full text-sm font-semibold mb-4">
-                {project.category}
-              </span>
-              <h1 className="text-5xl md:text-7xl font-display font-bold text-white mb-4">
+              <div className="flex items-center gap-3 mb-4">
+                <span className="tag">{project.category}</span>
+                <span className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>{project.year}</span>
+                {project.featured && <span className="tag-gold">Featured</span>}
+              </div>
+              <h1 className="text-3xl md:text-5xl lg:text-6xl font-display font-bold text-white max-w-3xl leading-tight">
                 {project.title}
               </h1>
             </motion.div>
@@ -55,75 +94,112 @@ const ProjectDetail = () => {
         </div>
       </section>
 
-      {/* Project Details */}
-      <section className="py-20 bg-white">
+      {/* ── Content ─────────────────────────────────────────────────── */}
+      <section className="py-16" style={{ background: 'var(--bg-base)' }}>
         <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-            {/* Main Content */}
-            <div className="lg:col-span-2 space-y-8">
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-              >
-                <h2 className="text-3xl font-display font-bold mb-4">Project Overview</h2>
-                <p className="text-lg text-dark-600 leading-relaxed mb-6">
-                  {project.description}
-                </p>
-                <p className="text-lg text-dark-600 leading-relaxed">
+
+            {/* Project meta */}
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="lg:col-span-1"
+            >
+              <div className="glass-card rounded-2xl p-7 space-y-6 sticky top-28">
+                <div>
+                  <p className="section-label mb-1">Client</p>
+                  <p className="text-white font-semibold">{project.client}</p>
+                </div>
+                <div>
+                  <p className="section-label mb-1">Year</p>
+                  <p className="text-white font-semibold">{project.year}</p>
+                </div>
+                <div>
+                  <p className="section-label mb-1">Category</p>
+                  <span className="tag">{project.category}</span>
+                </div>
+                <div>
+                  <p className="section-label mb-3">Tags</p>
+                  <div className="flex flex-wrap gap-2">
+                    {project.tags.map(tag => (
+                      <span key={tag} className="text-xs px-2 py-1 rounded font-mono"
+                        style={{ background: 'rgba(139,92,246,0.08)', color: 'var(--text-muted)' }}>
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="section-label mb-3">Deliverables</p>
+                  <ul className="space-y-2">
+                    {project.deliverables.map(d => (
+                      <li key={d} className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                        <span style={{ color: 'var(--primary-light)' }}>✦</span>
+                        {d}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Description */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="lg:col-span-2 space-y-8"
+            >
+              <div>
+                <p className="section-label mb-3">Overview</p>
+                <h2 className="text-2xl md:text-3xl font-display font-bold text-white mb-6">Project Brief</h2>
+                <p className="text-base leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
                   {project.longDescription}
                 </p>
-              </motion.div>
+              </div>
 
-              <motion.div
-                initial={{ opacity: 0, y: 30 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6, delay: 0.2 }}
-              >
-                <h3 className="text-2xl font-display font-bold mb-4">Deliverables</h3>
-                <ul className="space-y-2">
-                  {project.deliverables.map((item, index) => (
-                    <li key={index} className="flex items-center text-dark-600">
-                      <span className="w-2 h-2 bg-primary-600 rounded-full mr-3"></span>
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              </motion.div>
-            </div>
+              {/* Second image (alternate view) */}
+              <div className="rounded-2xl overflow-hidden aspect-video">
+                <img
+                  src={project.image}
+                  alt={`${project.title} detail`}
+                  className="w-full h-full object-cover"
+                />
+              </div>
 
-            {/* Sidebar */}
-            <div className="lg:col-span-1">
-              <motion.div
-                initial={{ opacity: 0, x: 30 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.6 }}
-                className="sticky top-24 space-y-6 p-8 bg-dark-50 rounded-2xl"
-              >
-                <div>
-                  <div className="text-sm text-dark-500 mb-1">Client</div>
-                  <div className="text-lg font-semibold">{project.client}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-dark-500 mb-1">Year</div>
-                  <div className="text-lg font-semibold">{project.year}</div>
-                </div>
-                <div>
-                  <div className="text-sm text-dark-500 mb-1">Category</div>
-                  <div className="text-lg font-semibold">{project.category}</div>
-                </div>
-                <Link
-                  to="/work"
-                  className="block w-full text-center px-6 py-3 bg-primary-600 text-white font-semibold rounded-full hover:bg-primary-700 transition-colors"
-                >
-                  Back to Work
-                </Link>
-              </motion.div>
-            </div>
+              <p className="text-base leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+                Each element of this project was crafted with meticulous attention to detail — ensuring visual consistency, strategic communication, and memorable impact across all deliverables.
+              </p>
+            </motion.div>
           </div>
+        </div>
+      </section>
+
+      {/* ── Next Project ─────────────────────────────────────────────── */}
+      <section className="py-16 relative overflow-hidden" style={{ background: '#0a0a14', borderTop: '1px solid var(--bg-border)' }}>
+        <div className="pointer-events-none absolute inset-0">
+          <div className="orb-purple w-96 h-96 top-0 right-0 opacity-15" />
+        </div>
+        <div className="relative z-10 max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
+          <p className="section-label mb-6">Next Project</p>
+          <Link to={`/work/${nextProject.id}`} className="group flex items-center justify-between">
+            <div>
+              <div className="flex items-center gap-3 mb-2">
+                <span className="tag">{nextProject.category}</span>
+              </div>
+              <h2 className="text-2xl md:text-4xl lg:text-5xl font-display font-bold text-white group-hover:gradient-text transition-all duration-300">
+                {nextProject.title}
+              </h2>
+            </div>
+            <motion.div
+              whileHover={{ x: 8, scale: 1.1 }}
+              className="w-14 h-14 rounded-full flex items-center justify-center flex-shrink-0 ml-6"
+              style={{ background: 'linear-gradient(135deg, var(--primary), var(--primary-dark))', boxShadow: '0 0 20px rgba(139,92,246,0.4)' }}
+            >
+              <FiArrowRight className="w-6 h-6 text-white" />
+            </motion.div>
+          </Link>
         </div>
       </section>
     </div>
@@ -131,4 +207,3 @@ const ProjectDetail = () => {
 }
 
 export default ProjectDetail
-

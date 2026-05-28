@@ -1,81 +1,78 @@
-import { useEffect, useState } from 'react'
-import { motion } from 'framer-motion'
+import { useEffect, useState, useRef } from 'react'
 
 const CustomCursor = () => {
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
-  const [isHovering, setIsHovering] = useState(false)
-  const [isDesktop, setIsDesktop] = useState(false)
+  const dotRef  = useRef(null)
+  const ringRef = useRef(null)
+  const [isHover, setIsHover] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
-    // Check if device has a mouse (desktop)
-    const checkDesktop = () => {
-      setIsDesktop(window.matchMedia('(pointer: fine)').matches)
-    }
-    
-    checkDesktop()
-    window.addEventListener('resize', checkDesktop)
-
-    if (!isDesktop) return
-
-    const updateMousePosition = (e) => {
-      setMousePosition({ x: e.clientX, y: e.clientY })
+    // Detect touch device
+    if (window.matchMedia('(hover: none)').matches) {
+      setIsMobile(true)
+      return
     }
 
-    const handleMouseEnter = () => setIsHovering(true)
-    const handleMouseLeave = () => setIsHovering(false)
+    const dot  = dotRef.current
+    const ring = ringRef.current
+    let mouseX = 0, mouseY = 0
+    let ringX  = 0, ringY  = 0
 
-    // Add hover listeners to interactive elements
-    const interactiveElements = document.querySelectorAll('a, button, .project-card')
-    interactiveElements.forEach((el) => {
-      el.addEventListener('mouseenter', handleMouseEnter)
-      el.addEventListener('mouseleave', handleMouseLeave)
+    const onMove = (e) => {
+      mouseX = e.clientX
+      mouseY = e.clientY
+      dot.style.transform = `translate(${mouseX}px, ${mouseY}px) translate(-50%,-50%)`
+    }
+
+    // Smooth ring follow
+    const animate = () => {
+      ringX += (mouseX - ringX) * 0.12
+      ringY += (mouseY - ringY) * 0.12
+      ring.style.transform = `translate(${ringX}px, ${ringY}px) translate(-50%,-50%)`
+      requestAnimationFrame(animate)
+    }
+    const raf = requestAnimationFrame(animate)
+
+    // Hover detection
+    const addHover = () => {
+      dot.classList.add('cursor-hover')
+      ring.classList.add('cursor-hover')
+    }
+    const removeHover = () => {
+      dot.classList.remove('cursor-hover')
+      ring.classList.remove('cursor-hover')
+    }
+
+    const interactables = 'a, button, [role="button"], input, textarea, select, label, .project-card, .glass-card-hover'
+    document.querySelectorAll(interactables).forEach(el => {
+      el.addEventListener('mouseenter', addHover)
+      el.addEventListener('mouseleave', removeHover)
     })
 
-    window.addEventListener('mousemove', updateMousePosition)
+    // Also use event delegation for dynamic elements
+    document.addEventListener('mouseover', (e) => {
+      if (e.target.closest('a, button, [role="button"], input, textarea')) addHover()
+    })
+    document.addEventListener('mouseout', (e) => {
+      if (e.target.closest('a, button, [role="button"], input, textarea')) removeHover()
+    })
+
+    window.addEventListener('mousemove', onMove)
 
     return () => {
-      window.removeEventListener('mousemove', updateMousePosition)
-      window.removeEventListener('resize', checkDesktop)
-      interactiveElements.forEach((el) => {
-        el.removeEventListener('mouseenter', handleMouseEnter)
-        el.removeEventListener('mouseleave', handleMouseLeave)
-      })
+      window.removeEventListener('mousemove', onMove)
+      cancelAnimationFrame(raf)
     }
-  }, [isDesktop])
+  }, [])
 
-  if (!isDesktop) return null
+  if (isMobile) return null
 
   return (
     <>
-      <motion.div
-        className="fixed top-0 left-0 w-4 h-4 bg-primary-600 rounded-full pointer-events-none z-50 mix-blend-difference"
-        animate={{
-          x: mousePosition.x - 8,
-          y: mousePosition.y - 8,
-        }}
-        transition={{
-          type: 'spring',
-          stiffness: 500,
-          damping: 28,
-        }}
-      />
-      <motion.div
-        className={`fixed top-0 left-0 rounded-full pointer-events-none z-50 ${
-          isHovering ? 'w-12 h-12 bg-primary-600/20' : 'w-8 h-8 border-2 border-primary-600'
-        }`}
-        animate={{
-          x: mousePosition.x - (isHovering ? 24 : 16),
-          y: mousePosition.y - (isHovering ? 24 : 16),
-        }}
-        transition={{
-          type: 'spring',
-          stiffness: 150,
-          damping: 15,
-        }}
-      />
+      <div ref={dotRef}  className="cursor-dot"  />
+      <div ref={ringRef} className="cursor-ring" />
     </>
   )
 }
 
 export default CustomCursor
-

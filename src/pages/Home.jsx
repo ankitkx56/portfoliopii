@@ -3,344 +3,394 @@ import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { gsap } from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { designer, services } from '../data/portfolio'
+import { getFeaturedProjects } from '../data/projects'
+import { FiArrowRight, FiArrowDown } from 'react-icons/fi'
+import { FaBehance, FaInstagram, FaLinkedin } from 'react-icons/fa'
+import SkillsShowcase from '../components/SkillsShowcase'
+import { scrollTA } from '../hooks/useHeroAnimation'
 
 gsap.registerPlugin(ScrollTrigger)
 
+const floatingLogos = [
+  { src: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/photoshop/photoshop-plain.svg',     alt: 'Ps', style: { top: '14%',   left:  '5%'  }, delay: 0,   dur: 9  },
+  { src: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/illustrator/illustrator-plain.svg', alt: 'Ai', style: { top: '20%',   right: '5%'  }, delay: 0.5, dur: 11 },
+  { src: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/figma/figma-original.svg',          alt: 'Fg', style: { bottom: '20%',left:  '7%'  }, delay: 1,   dur: 10 },
+  { src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Crect width='60' height='60' rx='10' fill='%232B0A14'/%3E%3Ctext x='30' y='43' font-family='Arial Black,Arial,sans-serif' font-size='32' font-weight='900' fill='%23FF3366' text-anchor='middle'%3EId%3C/text%3E%3C/svg%3E", alt: 'Id', style: { bottom: '14%',right: '7%'  }, delay: 1.5, dur: 12 },
+]
+
+const socialLinks = [
+  { icon: FaBehance,   href: designer.social.behance,   label: 'Behance'   },
+  { icon: FaInstagram, href: designer.social.instagram, label: 'Instagram' },
+  { icon: FaLinkedin,  href: designer.social.linkedin,  label: 'LinkedIn'  },
+]
+
+/* ── Masked-word line component (first-line style) ─────────────────────── */
+const FirstLine = ({ text, className }) => (
+  <div className="overflow-hidden">
+    <div className={`first-line ${className}`}>
+      {text.split(' ').map((word, i) => (
+        <span key={i} style={{ display: 'inline-block', overflow: 'hidden', verticalAlign: 'bottom', marginRight: '0.28em' }}>
+          <span className="w-inner" style={{ display: 'inline-block' }}>{word}</span>
+        </span>
+      ))}
+    </div>
+  </div>
+)
+
 const Home = () => {
-  const heroRef = useRef(null)
-  const sectionRef = useRef(null)
+  const pageRef  = useRef(null)
+  const heroRef  = useRef(null)
+  const workRef  = useRef(null)
+  const servRef  = useRef(null)
+  const ctaRef   = useRef(null)
+  const featuredProjects = getFeaturedProjects()
 
   useEffect(() => {
-    // Parallax effect for background only
-    const parallaxTrigger = gsap.to('.hero-bg', {
-      yPercent: 50,
-      ease: 'none',
-      scrollTrigger: {
-        trigger: heroRef.current,
-        start: 'top top',
-        end: 'bottom top',
-        scrub: true,
-      },
-    })
+    const ctx = gsap.context(() => {
 
-    return () => {
-      // Cleanup ScrollTriggers on unmount
-      if (parallaxTrigger?.scrollTrigger) {
-        parallaxTrigger.scrollTrigger.kill()
+      /* ── HERO — no ScrollTrigger ───────────────────────────────── */
+      // Line 1 "Piyush": chars fly in (3D)
+      const nameChars = heroRef.current?.querySelectorAll('.name-char')
+      if (nameChars?.length) {
+        gsap.fromTo(nameChars,
+          { y: '130%', rotateX: -80, opacity: 0 },
+          { y: 0, rotateX: 0, opacity: 1, duration: 1.1, stagger: 0.04, ease: 'expo.out', delay: 0.15, clearProps: 'all' }
+        )
       }
-    }
+
+      // Line 2 "Das" — FADE IN after first name chars
+      const nameLine2 = heroRef.current?.querySelector('.name-line2')
+      if (nameLine2) {
+        gsap.fromTo(nameLine2,
+          { opacity: 0, y: 55, scale: 0.94 },
+          { opacity: 1, y: 0, scale: 1, duration: 1.4, ease: 'expo.out', delay: 0.5, clearProps: 'all' }
+        )
+      }
+
+      // Brand + tagline + socials
+      gsap.fromTo(['.hero-brand', '.hero-tagline', '.hero-ctas', '.hero-socials', '.scroll-hint'],
+        { opacity: 0, y: 16 },
+        { opacity: 1, y: 0, stagger: 0.1, duration: 0.8, ease: 'expo.out', delay: 1.1, clearProps: 'all' }
+      )
+
+      /* ── PARALLAX (scrub = auto-reverses) ──────────────────────── */
+      gsap.to('.hero-parallax', {
+        yPercent: 22, ease: 'none',
+        scrollTrigger: { trigger: '.hero-section', start: 'top top', end: 'bottom top', scrub: 1.5 },
+      })
+      gsap.to('.hero-content', {
+        yPercent: -12, opacity: 0, ease: 'none',
+        scrollTrigger: { trigger: '.hero-section', start: 'center top', end: 'bottom top', scrub: 1 },
+      })
+
+      /* ── SCROLL SECTIONS — toggleActions for reverse ──────────── */
+      // Section heading groups
+      pageRef.current?.querySelectorAll('.scroll-reveal-group').forEach(group => {
+        const label  = group.querySelector('.r-label')
+        const words  = group.querySelectorAll('.r-heading .w-inner')
+        const second = group.querySelector('.r-heading-2')
+        const body   = group.querySelector('.r-body')
+        const tl = gsap.timeline({
+          scrollTrigger: { trigger: group, start: 'top 80%', toggleActions: scrollTA },
+        })
+        if (label)  tl.fromTo(label,  { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: 'expo.out' }, 0)
+        if (words.length) tl.fromTo(words, { y: '105%' }, { y: 0, stagger: 0.06, duration: 0.9, ease: 'expo.out' }, 0.1)
+        if (second) tl.fromTo(second, { opacity: 0, y: 40, scale: 0.95 }, { opacity: 1, y: 0, scale: 1, duration: 1.1, ease: 'expo.out' }, 0.4)
+        if (body)   tl.fromTo(body,   { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, ease: 'expo.out' }, 0.35)
+      })
+
+      // Featured cards
+      if (workRef.current) {
+        gsap.fromTo(workRef.current.querySelectorAll('.proj-card'),
+          { y: 100, opacity: 0, clipPath: 'inset(20% 0% 0% 0%)' },
+          {
+            y: 0, opacity: 1, clipPath: 'inset(0% 0% 0% 0%)',
+            stagger: 0.13, duration: 1, ease: 'expo.out',
+            scrollTrigger: { trigger: workRef.current, start: 'top 80%', toggleActions: scrollTA },
+          }
+        )
+      }
+
+      // Service cards alternating x
+      if (servRef.current) {
+        servRef.current.querySelectorAll('.serv-card').forEach((card, i) => {
+          gsap.fromTo(card,
+            { x: i % 2 === 0 ? -70 : 70, opacity: 0, scale: 0.94 },
+            {
+              x: 0, opacity: 1, scale: 1, duration: 0.9, ease: 'expo.out',
+              scrollTrigger: { trigger: card, start: 'top 84%', toggleActions: scrollTA },
+            }
+          )
+        })
+      }
+
+      // CTA
+      if (ctaRef.current) {
+        gsap.fromTo(ctaRef.current.querySelector('.cta-title'),
+          { scale: 0.85, opacity: 0, y: 50 },
+          {
+            scale: 1, opacity: 1, y: 0, duration: 1.1, ease: 'expo.out',
+            scrollTrigger: { trigger: ctaRef.current, start: 'top 78%', toggleActions: scrollTA },
+          }
+        )
+        gsap.fromTo(ctaRef.current.querySelector('.cta-body'),
+          { opacity: 0, y: 20 },
+          {
+            opacity: 1, y: 0, duration: 0.8, ease: 'expo.out',
+            scrollTrigger: { trigger: ctaRef.current, start: 'top 78%', toggleActions: scrollTA },
+          }
+        )
+      }
+
+      // HR lines
+      pageRef.current?.querySelectorAll('.hr-line').forEach(line => {
+        gsap.fromTo(line,
+          { scaleX: 0, transformOrigin: 'left center' },
+          {
+            scaleX: 1, duration: 1.3, ease: 'expo.out',
+            scrollTrigger: { trigger: line, start: 'top 90%', toggleActions: scrollTA },
+          }
+        )
+      })
+
+    }, pageRef)
+
+    return () => ctx.revert()
   }, [])
 
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.2,
-      },
-    },
-  }
-
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1,
-      transition: {
-        duration: 0.6,
-        ease: 'easeOut',
-      },
-    },
-  }
-
   return (
-    <div className="min-h-screen">
-      {/* Hero Section */}
-      <section
-        ref={heroRef}
-        className="relative min-h-[80vh] md:min-h-screen pt-20 sm:pt-28 pb-10 sm:pb-16 flex items-center justify-center bg-gradient-to-br from-dark-50 to-white"
-      >
-        {/* Background Pattern */}
-        <div className="hero-bg absolute inset-0 opacity-5">
+    <div ref={pageRef} className="min-h-screen" style={{ background: 'var(--bg-base)' }}>
+
+      {/* ── HERO ──────────────────────────────────────────────────────── */}
+      <section className="hero-section relative min-h-screen flex items-center justify-center overflow-hidden">
+        <div className="hero-parallax absolute inset-0 pointer-events-none">
+          <div className="absolute inset-0" style={{ background: 'var(--hero-gradient)' }} />
+          <div className="absolute inset-0 opacity-[0.03]"
+            style={{ backgroundImage: 'linear-gradient(rgba(139,92,246,1) 1px, transparent 1px), linear-gradient(90deg, rgba(139,92,246,1) 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
+          <div className="orb-purple w-[700px] h-[700px] top-1/4 -left-48 opacity-20" />
+          <div className="orb-gold    w-[500px] h-[500px] bottom-0  right-0  opacity-10" />
+        </div>
+
+        {/* Floating logos */}
+        <div className="pointer-events-none absolute inset-0 hidden lg:block">
+          {floatingLogos.map((logo) => (
+            <motion.img key={logo.alt} src={logo.src} alt={logo.alt}
+              className="w-10 xl:w-14 absolute drop-shadow-2xl"
+              style={{ ...logo.style, opacity: 0.4 }}
+              animate={{ y: [0, -20, -8, 0], rotate: [0, 5, -3, 0] }}
+              transition={{ duration: logo.dur, repeat: Infinity, ease: 'easeInOut', delay: logo.delay }}
+            />
+          ))}
+        </div>
+
+        <div ref={heroRef} className="hero-content relative z-10 max-w-7xl mx-auto px-6 sm:px-8 lg:px-12 text-center pt-24 pb-16">
+
+          {/* Badge */}
+          <div className="hero-ctas inline-flex items-center gap-2 mb-8">
+            <span className="tag">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block animate-pulse" />
+              Open to Work — 2026
+            </span>
+          </div>
+
+          {/* Name — "Piyush Das" on ONE horizontal line
+               "Piyush" chars fly in, then "Das" fades in on the same line */}
           <div
-            className="absolute inset-0"
+            className="font-display font-black leading-[0.88]"
             style={{
-              backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000000' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+              fontSize: 'clamp(3rem, 10vw, 9rem)',
+              perspective: '800px',
+              perspectiveOrigin: 'center',
             }}
-          />
-        </div>
-
-        {/* Floating graphic design software logos (around, not behind text) */}
-        <div className="pointer-events-none absolute inset-0 z-0 hidden sm:block">
-          <motion.img
-            src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/photoshop/photoshop-plain.svg"
-            alt="Adobe Photoshop"
-            className="w-10 md:w-12 drop-shadow-xl absolute"
-            style={{ top: '8%', left: '6%' }}
-            animate={{ x: [0, 18, -10, 6, 0], y: [0, -16, 4, -8, 0], rotate: [0, 8, -6, 4, 0] }}
-            transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
-          />
-          <motion.img
-            src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/illustrator/illustrator-plain.svg"
-            alt="Adobe Illustrator"
-            className="w-10 md:w-12 drop-shadow-xl absolute"
-            style={{ top: '16%', right: '4%' }}
-            animate={{ x: [0, -16, 10, -6, 0], y: [0, 10, -8, 6, 0], rotate: [0, -7, 4, -3, 0] }}
-            transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 0.5 }}
-          />
-          <motion.img
-            src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/figma/figma-original.svg"
-            alt="Figma"
-            className="w-9 md:w-11 drop-shadow-xl absolute"
-            style={{ bottom: '10%', left: '12%' }}
-            animate={{ x: [0, -12, 6, -4, 0], y: [0, 8, -10, 6, 0], rotate: [0, 5, -5, 3, 0] }}
-            transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut', delay: 0.8 }}
-          />
-          <motion.img
-            src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/gimp/gimp-original.svg"
-            alt="GIMP"
-            className="w-9 md:w-11 drop-shadow-xl absolute"
-            style={{ bottom: '6%', right: '12%' }}
-            animate={{ x: [0, 10, -14, 8, 0], y: [0, -10, 8, -6, 0], rotate: [0, -6, 6, -4, 0] }}
-            transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 1.1 }}
-          />
-        </div>
-
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-8 lg:px-12 text-center">
-          <motion.span
-            className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 rounded-full bg-white/80 text-[11px] sm:text-xs md:text-sm font-medium text-dark-700 shadow-sm border border-dark-100 mb-5 sm:mb-6"
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
+            aria-label="Piyush Das"
           >
-            <span className="inline-block h-2 w-2 rounded-full bg-primary-500" />
-            UI/UX • Brand & Visual Designer
-          </motion.span>
-
-          <motion.h1
-            className="hero-title text-4xl sm:text-5xl md:text-7xl lg:text-8xl xl:text-9xl font-display font-bold mb-6 sm:mb-10 leading-tight"
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-          >
-            <span className="block">Creative</span>
-            <span className="block gradient-text">Designer</span>
-          </motion.h1>
-          
-          <motion.p
-            className="hero-subtitle text-base sm:text-lg md:text-2xl text-dark-600 mb-8 sm:mb-12 max-w-xl sm:max-w-2xl mx-auto px-2 sm:px-0"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-          >
-            Crafting visual experiences that inspire, engage, and transform ideas into
-            compelling design solutions.
-          </motion.p>
-
-          <motion.div
-            className="flex flex-col items-center gap-6 sm:gap-8 md:gap-10"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-          >
-            <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 md:gap-6">
-              <Link
-                to="/work"
-                className="inline-flex items-center justify-center px-6 sm:px-8 py-3 sm:py-4 bg-primary-600 text-white text-sm sm:text-base font-semibold rounded-full hover:bg-primary-700 transition-all duration-300 hover:scale-105 shadow-lg hover:shadow-xl"
-              >
-                View My Work
-              </Link>
-              <Link
-                to="/contact"
-                className="inline-flex items-center justify-center px-6 sm:px-7 py-2.5 sm:py-3 rounded-full border border-dark-200 bg-white/70 text-xs sm:text-sm font-medium text-dark-800 hover:bg-dark-50 transition-all duration-300"
-              >
-                Let&apos;s Collaborate
-              </Link>
-            </div>
-
-            {/* Quick stats */}
-            <div className="grid grid-cols-3 gap-3 sm:gap-4 md:gap-8 text-left md:text-center w-full max-w-md sm:max-w-none">
-              <div>
-                <p className="text-xl sm:text-2xl md:text-3xl font-display font-bold text-dark-900">
-                  3+
-                </p>
-                <p className="text-[11px] sm:text-xs md:text-sm text-dark-500">
-                  Years of experience
-                </p>
-              </div>
-              <div>
-                <p className="text-xl sm:text-2xl md:text-3xl font-display font-bold text-dark-900">
-                  25+
-                </p>
-                <p className="text-[11px] sm:text-xs md:text-sm text-dark-500">
-                  Completed projects
-                </p>
-              </div>
-              <div>
-                <p className="text-xl sm:text-2xl md:text-3xl font-display font-bold text-dark-900">
-                  10+
-                </p>
-                <p className="text-[11px] sm:text-xs md:text-sm text-dark-500">
-                  Happy clients
-                </p>
-              </div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section
-        ref={sectionRef}
-        className="py-16 sm:py-20 md:py-24 bg-white"
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12">
-          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-5 sm:gap-6 mb-10 sm:mb-14">
-            <div>
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold text-dark-900 mb-2 sm:mb-3">
-                What I Do Best
-              </h2>
-              <p className="text-sm sm:text-base text-dark-600 max-w-xl">
-                From bold brand systems to polished digital products, I design experiences
-                that feel intentional, memorable, and easy to use.
-              </p>
-            </div>
-          </div>
-
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.3 }}
-            className="grid grid-cols-1 md:grid-cols-3 gap-6 sm:gap-8 md:gap-10"
-          >
-            {[
-              {
-                title: 'Brand Identity',
-                badge: 'Strategy + Visuals',
-                description:
-                  'Logo systems, color palettes, and typography that translate your story into a consistent visual language.',
-              },
-              {
-                title: 'Product & UI Design',
-                badge: 'Web • App • Dashboard',
-                description:
-                  'Clean, modern interfaces with clear hierarchy, smooth interactions, and pixel-perfect layouts.',
-              },
-              {
-                title: 'Visual Communication',
-                badge: 'Marketing & Social',
-                description:
-                  'Posters, banners, and social creatives that grab attention and communicate your message instantly.',
-              },
-            ].map((feature, index) => (
-              <motion.div
-                key={feature.title}
-                variants={itemVariants}
-                className="section-item"
-              >
-                <div className="h-full p-6 sm:p-7 rounded-2xl bg-gradient-to-br from-dark-50 to-white border border-dark-100/60 hover:border-primary-200 hover:shadow-xl transition-all duration-300 flex flex-col gap-3 sm:gap-4">
-                  <span className="inline-flex px-3 py-1 rounded-full bg-white text-[10px] sm:text-[11px] font-semibold tracking-wide text-primary-700 border border-primary-100 w-fit">
-                    {feature.badge}
-                  </span>
-                  <h3 className="text-xl sm:text-2xl font-display font-bold text-dark-900">
-                    {feature.title}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-dark-600 leading-relaxed">
-                    {feature.description}
-                  </p>
-                </div>
-              </motion.div>
+            {'Piyush'.split('').map((char, i) => (
+              <span key={i} className="name-char inline-block text-white"
+                style={{ display: 'inline-block' }}>
+                {char}
+              </span>
             ))}
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Process strip */}
-      <section className="py-16 sm:py-20 bg-dark-900 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-8 lg:px-12">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 sm:gap-8 mb-8 sm:mb-10">
-            <div>
-              <h2 className="text-2xl sm:text-3xl md:text-4xl font-display font-bold mb-2 sm:mb-3">
-                A simple, thoughtful process
-              </h2>
-              <p className="text-sm sm:text-base text-dark-100 max-w-xl">
-                I guide projects from rough ideas to polished visuals with clear steps and communication.
-              </p>
-            </div>
+            {/* Space */}
+            <span className="inline-block">&nbsp;</span>
+            {/* "Das" fades in on the SAME line */}
+            <span className="name-line2 inline-block gradient-text" style={{ opacity: 0 }}>
+              Das
+            </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6 md:gap-8">
-            {[
-              {
-                step: '01',
-                title: 'Discover',
-                text: 'We define goals, audience, and visual direction through a focused conversation.',
-              },
-              {
-                step: '02',
-                title: 'Design',
-                text: 'I explore concepts, refine layouts, and build a clear visual story for your brand.',
-              },
-              {
-                step: '03',
-                title: 'Deliver',
-                text: 'You receive ready-to-use assets, guidelines, and support for a smooth launch.',
-              },
-            ].map((item) => (
-              <div
-                key={item.step}
-                className="relative rounded-2xl border border-white/10 bg-white/5 px-5 sm:px-6 py-6 sm:py-7 backdrop-blur-sm"
-              >
-                <div className="text-xs font-semibold tracking-[0.2em] uppercase text-primary-200 mb-3">
-                  {item.step}
-                </div>
-                <h3 className="text-xl font-display font-semibold mb-3">
-                  {item.title}
-                </h3>
-                <p className="text-sm text-dark-100 leading-relaxed">
-                  {item.text}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
+          {/* Brand */}
+          <p className="hero-brand text-xl md:text-2xl font-display font-bold gradient-text mb-2 mt-1">
+            Design Ritual
+          </p>
 
-      {/* CTA Section */}
-      <section className="py-28 -mt-px bg-gradient-to-b from-dark-900 via-primary-600 to-primary-500 text-white">
-        <div className="max-w-4xl mx-auto px-6 sm:px-8 lg:px-12 text-center">
-          <motion.h2
-            className="text-4xl md:text-5xl font-display font-bold mb-6"
-            initial={{ opacity: 0, y: 30 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6 }}
-          >
-            Let's Create Something Amazing Together
-          </motion.h2>
-          <motion.p
-            className="text-xl mb-8 text-primary-100"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-          >
-            Ready to bring your vision to life? Let's discuss your next project.
-          </motion.p>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-          >
-            <Link
-              to="/contact"
-              className="inline-block px-8 py-4 bg-white text-primary-600 font-semibold rounded-full hover:bg-primary-50 transition-all duration-300 hover:scale-105 shadow-lg"
-            >
-              Get In Touch
+          {/* Tagline */}
+          <p className="hero-tagline text-base md:text-lg max-w-xl mx-auto mb-8 leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
+            Graphic designer · Branding · Social Media · Posters · Print · Packaging
+          </p>
+
+          {/* CTAs */}
+          <div className="hero-ctas flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
+            <Link to="/work" className="btn-primary gap-2">
+              View My Work <FiArrowRight className="w-4 h-4" />
             </Link>
-          </motion.div>
+            <Link to="/about" className="btn-outline gap-2">About Me</Link>
+          </div>
+
+          {/* Social icons */}
+          <div className="hero-socials flex items-center justify-center gap-3 mb-20">
+            {socialLinks.map(({ icon: Icon, href, label }) => (
+              <motion.a key={label} href={href} target="_blank" rel="noopener noreferrer"
+                aria-label={label} whileHover={{ y: -4, scale: 1.15 }} whileTap={{ scale: 0.92 }}
+                className="w-9 h-9 flex items-center justify-center rounded-full glass-card">
+                <Icon className="w-3.5 h-3.5" style={{ color: 'var(--text-secondary)' }} />
+              </motion.a>
+            ))}
+          </div>
+
+          {/* Scroll hint */}
+          <div className="scroll-hint absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2">
+            <span className="text-xs font-mono tracking-widest" style={{ color: 'var(--text-muted)' }}>SCROLL</span>
+            <motion.div animate={{ y: [0, 10, 0] }} transition={{ duration: 1.6, repeat: Infinity }}>
+              <FiArrowDown className="w-4 h-4" style={{ color: 'var(--primary-light)' }} />
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
+      <hr className="hr-line hr-gradient" style={{ transform: 'scaleX(0)' }} />
+
+      {/* ── SKILLS SHOWCASE ─────────────────────────────────────────── */}
+      <SkillsShowcase />
+
+      <hr className="hr-line hr-gradient" style={{ transform: 'scaleX(0)' }} />
+
+      {/* ── FEATURED WORK ───────────────────────────────────────────── */}
+      <section className="py-24" style={{ background: '#0a0a14' }}>
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
+          <div className="scroll-reveal-group flex items-end justify-between mb-14">
+            <div>
+              <p className="r-label section-label mb-2">Portfolio</p>
+              <div className="overflow-hidden">
+                <h2 className="r-heading text-4xl md:text-5xl font-display font-black text-white">
+                  {'Featured'.split(' ').map((w, i) => (
+                    <span key={i} style={{ display: 'inline-block', overflow: 'hidden', verticalAlign: 'bottom', marginRight: '0.3em' }}>
+                      <span className="w-inner" style={{ display: 'inline-block' }}>{w}</span>
+                    </span>
+                  ))}
+                </h2>
+              </div>
+              {/* "Work" fades in as second word */}
+              <div className="r-heading-2 text-4xl md:text-5xl font-display font-black gradient-text" style={{ opacity: 0 }}>
+                Work
+              </div>
+            </div>
+            <Link to="/work" className="hidden md:flex items-center gap-2 text-sm font-medium link-underline hover:text-white mb-2"
+              style={{ color: 'var(--text-secondary)' }}>
+              All Projects <FiArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+          <div ref={workRef} className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {featuredProjects.map((project) => (
+              <div key={project.id} className="proj-card group rounded-2xl overflow-hidden"
+                style={{ background: 'var(--bg-card)', border: '1px solid var(--bg-border)' }}>
+                <Link to={`/work/${project.id}`}>
+                  <div className="relative overflow-hidden aspect-[4/3]">
+                    <img src={project.image} alt={project.title}
+                      className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy" />
+                    <div className="project-card-overlay" />
+                    <div className="absolute inset-0 flex flex-col justify-end p-5 opacity-0 group-hover:opacity-100 translate-y-3 group-hover:translate-y-0 transition-all duration-500">
+                      <span className="tag-gold mb-2 w-fit text-xs">{project.category}</span>
+                      <h3 className="text-white font-display font-bold text-base leading-tight">{project.title}</h3>
+                      <span className="inline-flex items-center gap-1 mt-2 text-sm" style={{ color: 'var(--primary-light)' }}>
+                        View Project <FiArrowRight className="w-3.5 h-3.5" />
+                      </span>
+                    </div>
+                    <div className="absolute top-3 left-3"><span className="tag text-xs">{project.category}</span></div>
+                  </div>
+                  <div className="p-5">
+                    <h3 className="font-display font-bold text-white text-sm mb-1 group-hover:text-primary-300 transition-colors">
+                      {project.title}
+                    </h3>
+                    <p className="text-xs line-clamp-2" style={{ color: 'var(--text-muted)' }}>{project.description}</p>
+                  </div>
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <hr className="hr-line hr-gradient" style={{ transform: 'scaleX(0)' }} />
+
+      {/* ── WHAT I DESIGN ────────────────────────────────────────────── */}
+      <section className="py-24" style={{ background: 'var(--bg-base)' }}>
+        <div className="max-w-7xl mx-auto px-6 sm:px-8 lg:px-12">
+          <div className="scroll-reveal-group max-w-xl mb-14">
+            <p className="r-label section-label mb-3">Disciplines</p>
+            <div className="overflow-hidden">
+              <h2 className="r-heading text-4xl md:text-5xl font-display font-black text-white">
+                {'What I'.split(' ').map((w, i) => (
+                  <span key={i} style={{ display: 'inline-block', overflow: 'hidden', verticalAlign: 'bottom', marginRight: '0.3em' }}>
+                    <span className="w-inner" style={{ display: 'inline-block' }}>{w}</span>
+                  </span>
+                ))}
+              </h2>
+            </div>
+            <div className="r-heading-2 text-4xl md:text-5xl font-display font-black gradient-text mb-3" style={{ opacity: 0 }}>Design</div>
+            <p className="r-body text-base" style={{ color: 'var(--text-secondary)' }}>
+              Bold graphics across branding, social media, print, and packaging — crafted with intention.
+            </p>
+          </div>
+
+          <div ref={servRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+            {services.map((service, i) => (
+              <div key={i} className="serv-card glass-card-hover rounded-2xl p-6 flex flex-col gap-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-xl font-bold"
+                    style={{ color: i % 2 === 0 ? 'var(--primary-light)' : 'var(--accent-light)' }}>
+                    {service.icon}
+                  </span>
+                  <span className={i % 2 === 0 ? 'tag' : 'tag-gold'}>{service.badge}</span>
+                </div>
+                <h3 className="text-lg font-display font-bold text-white">{service.title}</h3>
+                <p className="text-sm leading-relaxed flex-1" style={{ color: 'var(--text-secondary)' }}>{service.description}</p>
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {service.tags.map(tag => (
+                    <span key={tag} className="text-xs px-2 py-0.5 rounded font-mono"
+                      style={{ background: 'rgba(139,92,246,0.08)', color: 'var(--text-muted)' }}>{tag}</span>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <hr className="hr-line hr-gradient" style={{ transform: 'scaleX(0)' }} />
+
+      {/* ── CTA ──────────────────────────────────────────────────────── */}
+      <section ref={ctaRef} className="py-28 relative overflow-hidden" style={{ background: '#060812' }}>
+        <div className="pointer-events-none absolute inset-0">
+          <div className="orb-purple w-[600px] h-[600px] top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-20" />
+        </div>
+        <div className="relative z-10 max-w-3xl mx-auto px-6 text-center">
+          <p className="section-label mb-4">Let's Connect</p>
+          <h2 className="cta-title text-4xl md:text-6xl font-display font-black text-white mb-4 leading-tight">
+            Interested in Working Together?
+          </h2>
+          <p className="cta-body text-base mb-10" style={{ color: 'var(--text-secondary)' }}>
+            Reach out on Instagram or Behance — always open to creative projects.
+          </p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            <a href={designer.social.behance} target="_blank" rel="noopener noreferrer" className="btn-primary">
+              Behance <FaBehance className="w-4 h-4" />
+            </a>
+            <a href={designer.social.instagram} target="_blank" rel="noopener noreferrer" className="btn-outline">
+              <FaInstagram className="w-4 h-4" /> @design.ritual
+            </a>
+          </div>
         </div>
       </section>
     </div>
@@ -348,4 +398,3 @@ const Home = () => {
 }
 
 export default Home
-
