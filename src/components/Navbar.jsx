@@ -40,11 +40,12 @@ const Navbar = () => {
           {/* Logo */}
           <Link to="/" className="group flex items-center gap-2">
             <motion.div
-              className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center bg-[#060b14] border border-white/10"
+              className="w-8 h-8 rounded-lg flex items-center justify-center text-sm"
+              style={{ background: 'linear-gradient(135deg, #8b5cf6, #f59e0b)' }}
               whileHover={{ scale: 1.1, rotate: 5 }}
               transition={{ type: 'spring', stiffness: 400, damping: 15 }}
             >
-              <img src="/logo.png" alt="Design Ritual Logo" className="w-full h-full object-cover" />
+              <span className="text-white font-bold">✦</span>
             </motion.div>
             <div className="flex flex-col leading-none">
               <span className="text-sm font-display font-black text-white">Piyush Das</span>
