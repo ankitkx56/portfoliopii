@@ -59,11 +59,8 @@ const Footer = () => (
         {/* Brand */}
         <div>
           <Link to="/" className="flex items-center gap-2 mb-4 w-fit">
-            <div
-              className="w-9 h-9 rounded-lg flex items-center justify-center"
-              style={{ background: 'linear-gradient(135deg, #8b5cf6, #f59e0b)' }}
-            >
-              <span className="text-white font-bold text-sm">✦</span>
+            <div className="w-9 h-9 rounded-lg overflow-hidden flex items-center justify-center bg-[#060b14] border border-white/10">
+              <img src="/logo.png" alt="Design Ritual Logo" className="w-full h-full object-cover" />
             </div>
             <div className="flex flex-col leading-none">
               <span className="font-display font-black text-white text-base">Piyush Das</span>

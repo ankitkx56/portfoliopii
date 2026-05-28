@@ -42,6 +42,16 @@ const LoadingScreen = ({ onComplete }) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
+            {/* Logo Image */}
+            <motion.div
+              className="w-16 h-16 rounded-xl overflow-hidden mx-auto mb-6 flex items-center justify-center bg-[#060b14] border border-white/10 shadow-lg"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.1, duration: 0.6, ease: 'easeOut' }}
+            >
+              <img src="/logo.png" alt="Design Ritual Logo" className="w-full h-full object-cover" />
+            </motion.div>
+
             <motion.div
               className="text-4xl md:text-5xl font-display font-bold mb-1"
               initial={{ letterSpacing: '0.5em', opacity: 0 }}
