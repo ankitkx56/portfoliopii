@@ -13,10 +13,10 @@ import { scrollTA } from '../hooks/useHeroAnimation'
 gsap.registerPlugin(ScrollTrigger)
 
 const floatingLogos = [
-  { src: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/photoshop/photoshop-plain.svg',     alt: 'Ps', style: { top: '14%',   left:  '5%'  }, delay: 0,   dur: 9  },
-  { src: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/illustrator/illustrator-plain.svg', alt: 'Ai', style: { top: '20%',   right: '5%'  }, delay: 0.5, dur: 11 },
+  { src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'%3E%3Crect width='240' height='240' rx='42' fill='%23001E36'/%3E%3Ctext x='120' y='175' font-family='Arial' font-size='120' font-weight='900' fill='%2331A8FF' text-anchor='middle'%3EPs%3C/text%3E%3C/svg%3E",     alt: 'Ps', style: { top: '14%',   left:  '5%'  }, delay: 0,   dur: 9  },
+  { src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'%3E%3Crect width='240' height='240' rx='42' fill='%23330000'/%3E%3Ctext x='120' y='175' font-family='Arial' font-size='120' font-weight='900' fill='%23FF9A00' text-anchor='middle'%3EAi%3C/text%3E%3C/svg%3E", alt: 'Ai', style: { top: '20%',   right: '5%'  }, delay: 0.5, dur: 11 },
   { src: 'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/figma/figma-original.svg',          alt: 'Fg', style: { bottom: '20%',left:  '7%'  }, delay: 1,   dur: 10 },
-  { src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 60 60'%3E%3Crect width='60' height='60' rx='10' fill='%232B0A14'/%3E%3Ctext x='30' y='43' font-family='Arial Black,Arial,sans-serif' font-size='32' font-weight='900' fill='%23FF3366' text-anchor='middle'%3EId%3C/text%3E%3C/svg%3E", alt: 'Id', style: { bottom: '14%',right: '7%'  }, delay: 1.5, dur: 12 },
+  { src: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'%3E%3Crect width='240' height='240' rx='42' fill='%2349021F'/%3E%3Ctext x='120' y='175' font-family='Arial' font-size='120' font-weight='900' fill='%23FF3695' text-anchor='middle'%3EId%3C/text%3E%3C/svg%3E", alt: 'Id', style: { bottom: '14%',right: '7%'  }, delay: 1.5, dur: 12 },
 ]
 
 const socialLinks = [

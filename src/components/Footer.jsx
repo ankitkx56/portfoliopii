@@ -7,9 +7,6 @@ const marqueeItems = [
   'Design Ritual', '✦', 'Graphic Designer', '✦',
   'Branding', '✦', 'Social Media', '✦',
   'Print & Packaging', '✦', 'Posters', '✦', 'Motion', '✦',
-  'Design Ritual', '✦', 'Graphic Designer', '✦',
-  'Branding', '✦', 'Social Media', '✦',
-  'Print & Packaging', '✦', 'Posters', '✦', 'Motion', '✦',
 ]
 
 const socialLinks = [
@@ -39,16 +36,20 @@ const Footer = () => (
 
     {/* Marquee strip */}
     <div className="marquee-wrapper py-4 border-b" style={{ borderColor: 'var(--bg-border)' }}>
-      <div className="marquee-inner">
-        {marqueeItems.map((item, i) => (
-          <span
-            key={i}
-            className="mx-6 text-sm font-display font-medium"
-            style={{ color: item === '✦' ? 'var(--accent)' : 'var(--text-muted)' }}
-          >
-            {item}
-          </span>
-        ))}
+      <div className="marquee-track">
+        {/* 4 copies guarantee seamless coverage on any screen width */}
+        {[0, 1, 2, 3].map((copy) =>
+          marqueeItems.map((item, i) => (
+            <span
+              key={`${copy}-${i}`}
+              className="marquee-item"
+              style={{ color: item === '✦' ? 'var(--accent)' : 'var(--text-muted)' }}
+              aria-hidden={copy > 0 ? 'true' : undefined}
+            >
+              {item}
+            </span>
+          ))
+        )}
       </div>
     </div>
 

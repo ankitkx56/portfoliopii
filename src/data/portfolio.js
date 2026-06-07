@@ -57,7 +57,7 @@ export const toolSkills = [
   {
     name:     'Photoshop',
     level:    90,
-    icon:     'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/photoshop/photoshop-plain.svg',
+    icon:     "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'%3E%3Crect width='240' height='240' rx='42' fill='%23001E36'/%3E%3Ctext x='120' y='175' font-family='Arial' font-size='120' font-weight='900' fill='%2331A8FF' text-anchor='middle'%3EPs%3C/text%3E%3C/svg%3E",
     color:    '#31A8FF',
     bg:       'rgba(255,255,255,0.07)',
     whiteGlow: true,   // Ps devicon has its own dark bg — use white glow so it stands out
@@ -65,7 +65,7 @@ export const toolSkills = [
   {
     name:     'Illustrator',
     level:    85,
-    icon:     'https://cdn.jsdelivr.net/gh/devicons/devicon/icons/illustrator/illustrator-plain.svg',
+    icon:     "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 240'%3E%3Crect width='240' height='240' rx='42' fill='%23330000'/%3E%3Ctext x='120' y='175' font-family='Arial' font-size='120' font-weight='900' fill='%23FF9A00' text-anchor='middle'%3EAi%3C/text%3E%3C/svg%3E",
     color:    '#FF9A00',
     bg:       'rgba(255,255,255,0.07)',
     whiteGlow: true,   // Ai devicon has its own dark bg — use white glow
